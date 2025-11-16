@@ -1,3 +1,4 @@
+import math
 
 class Value:
     """ stores a single scalar value and its gradient """
@@ -11,12 +12,15 @@ class Value:
         self._op = _op # the op that produced this node, for graphviz / debugging / etc
 
     def __add__(self, other):
-        other = other if isinstance(other, Value) else Value(other)
+        other = other if isinstance(other, Value) else Value(other) # if other is not a Value, make it one
         out = Value(self.data + other.data, (self, other), '+')
-
+        # this will be called during backpropagation
         def _backward():
-            self.grad += out.grad
-            other.grad += out.grad
+            # x = 1, y = 1, z (out) = x + y
+            # dz/dx = 1, dz/dy = 1
+            # so we propagate the gradient of  out.grad to both x and y
+            self.grad += out.grad * 1.0 
+            other.grad += out.grad * 1.0
         out._backward = _backward
 
         return out
@@ -24,9 +28,12 @@ class Value:
     def __mul__(self, other):
         other = other if isinstance(other, Value) else Value(other)
         out = Value(self.data * other.data, (self, other), '*')
-
+        # this will be called during backpropagation
         def _backward():
-            self.grad += other.data * out.grad
+            # x = 1, y = 2, z (out) = x * y
+            # dz/dx = y viz other.data, dz/dy = x viz self.data
+            # so we propagate the gradient of z out.grad to both x and y
+            self.grad += other.data * out.grad 
             other.grad += self.data * out.grad
         out._backward = _backward
 
@@ -37,7 +44,7 @@ class Value:
         out = Value(self.data**other, (self,), f'**{other}')
 
         def _backward():
-            self.grad += (other * self.data**(other-1)) * out.grad
+            self.grad += (other * self.data**(other-1)) * out.grad # d x**2 / dx = 2 * x^(2-1)
         out._backward = _backward
 
         return out
@@ -47,6 +54,16 @@ class Value:
 
         def _backward():
             self.grad += (out.data > 0) * out.grad
+        out._backward = _backward
+
+        return out
+    
+    def sigmoid(self):
+        out = Value(1 / (1 + math.exp(-self.data)), (self,), 'sigmoid')
+        # z = 1/(1+e^-x)
+        # dz/dx = z * (1 - z)
+        def _backward():
+            self.grad += (out.data * (1 - out.data)) * out.grad
         out._backward = _backward
 
         return out
@@ -92,3 +109,6 @@ class Value:
 
     def __repr__(self):
         return f"Value(data={self.data}, grad={self.grad})"
+    
+    
+
