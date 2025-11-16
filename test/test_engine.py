@@ -6,7 +6,7 @@ def test_sanity_check():
     x = Value(-4.0)
     z = 2 * x + 2 + x
     q = z.relu() + z * x
-    h = (z * z).relu()
+    h = (z * z).sigmoid()
     y = h + q + q * x
     y.backward()
     xmg, ymg = x, y
@@ -15,7 +15,7 @@ def test_sanity_check():
     x.requires_grad = True
     z = 2 * x + 2 + x
     q = z.relu() + z * x
-    h = (z * z).relu()
+    h = (z * z).sigmoid()
     y = h + q + q * x
     y.backward()
     xpt, ypt = x, y
